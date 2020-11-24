@@ -38,6 +38,7 @@
   <div class="flex-container">
 	<div id="cards" class="flex-subcontainer">A kártyáid:
 	</div>
+	<button id="confirmAtadas" onclick="confirmAtadas()">Átad!</button>
   </div>
   
   
@@ -64,7 +65,7 @@ let localPlayerNumber;
 // when client connects to server
 	socket.on('connect', (data) => {
 		let playerSocketID = socket.io.engine.id;
-		console.log("socket id sent to server is: " + playerSocketID);
+		////console.log("socket id sent to server is: " + playerSocketID);
 		socket.emit('join', playerSocketID);
 	});
 
@@ -81,12 +82,12 @@ let localPlayerNumber;
 	
 	// listens to welcome
     socket.on('welcome', (data)  => {
-		console.log("data received is: " + data);
+		////console.log("data received is: " + data);
 	});
 	
 	// listens to when all players joined and notify server
     socket.on('onePlayerJoined', (counter)  =>{
-		console.log("Number of connections: " + counter);
+		////console.log("Number of connections: " + counter);
 		if(counter == 4){
 			socket.emit('allPlayersJoined', '');
 		}
@@ -94,53 +95,61 @@ let localPlayerNumber;
 	
 	// inform in browser console that all players joined
     socket.on('allPlayersJoined', (msg) => {
-		console.log("Server says: " + msg);
 		socket.emit('letTheGameBegin', "letTheGameBegin");
 	});	
 
 	// receive notification from server that all has been set up
     socket.on('setupDone', (data) => {
 		// who is player who
-		console.log("my socket is: " + socket.io.engine.id);
 		let mySocket = socket.io.engine.id;
-		for(i=0; i<4; i++){
-			if(data.players[i].playerID == mySocket){
-				console.log("my player id is: " + data.players[i].playerID);
-				// add player id to DOM
-				let text = "Te vagy Player" + parseInt(data.players[i].playerNum+1 + ".");
-				localPlayerNumber = data.players[i].playerNum;
+		for(index=0; index<4; index++){
+			if(data.players[index].playerID == mySocket){
+				// add player id to DOM and remove cards if there are any previously
+				let className = "kezdoKartyak";
+				removeKartyak(className);
+				let text = "Te vagy Player" + parseInt(data.players[index].playerNum+1 + ".");
+				localPlayerNumber = data.players[index].playerNum;
 				appendStats(text);
 				// add
 				for(j=0; j<13; j++){
-					let link = '/' + "kepek" + '/' + data.players[i].playerCards[j].color+ "-" + data.players[i].playerCards[j].number + '.png';
+					let link = '/' + "kepek" + '/' + data.players[index].playerCards[j].color+ "-" + data.players[index].playerCards[j].number + '.png';
 					appendImg(link);
 				}
 				// asztali sorrend
-					if(data.players[i].playerID == mySocket){
-						myPlayerNumber = data.players[i].playerNum;
-						console.log("rendezem for player: " + myPlayerNumber)
+					if(data.players[index].playerID == mySocket){
+						myPlayerNumber = data.players[index].playerNum;
+						////console.log("rendezem for player: " + myPlayerNumber)
 						deskOrder(myPlayerNumber);
 					}
+			}
+			if(data.notFirstGame){
+				removeNotifications();
 			}
 		}
 		socket.emit('boardDrawn', "");
 	});
 
 	socket.on('atadasDone', (data)=>{
-		console.log("megkapom a kártyákat")
-		// töröljük középről az átadott kártyákat
-		// és írassuk ki az infobárra, amelyeket kaptunk
-		let imagesToRemoveMiddle = document.getElementsByClassName("dobottkartyak");
-		appendStats("Ezeket adtad át:");
-		for(i=imagesToRemoveMiddle.length-1;i>-1; i--){
+		let cycle = data.cycle;
+		if(cycle % 4 != 0){
+			////console.log("megkapom a kártyákat, cycle: " + cycle)
+			// töröljük középről az átadott kártyákat
+			// és írassuk ki az infobárra, amelyeket kaptunk
+			let imagesToRemoveMiddle = document.getElementsByClassName("dobottkartyak");
+			appendStats("Ezeket adtad át:");
+
+			for(i=imagesToRemoveMiddle.length-1;i>-1; i--){
 			appendImgInfo(imagesToRemoveMiddle[i].src.split("4200")[1]);
 			imagesToRemoveMiddle[i].remove();
-		}
-		appendStats("Ezeket kaptad:");
-		for(i=data.players[localPlayerNumber].playerCards.length-1;i>9; i--){
-			link = "/kepek/" + data.players[localPlayerNumber].playerCards[i].color + "-" + data.players[localPlayerNumber].playerCards[i].number + ".png";
-			console.log(link)
-			appendImgInfo(link);
+			}
+
+			appendStats("Ezeket kaptad:");
+			let fromWhom = getFromWhom(cycle);
+			////console.log("let from whom: " + fromWhom)
+			for(i=0; i<data.players[fromWhom].cardsToPass.length;i++){
+				link = "/kepek/" + data.players[fromWhom].cardsToPass[i].color + "-" + data.players[fromWhom].cardsToPass[i].number + ".png";
+				appendImgInfo(link);
+			}
 		}
 
 		// töröljük az alap kártyákat, majd adjuk hozzá a már kézben lévő kapott kártyákat
@@ -167,36 +176,45 @@ let localPlayerNumber;
 		appendStats(text);
 	})
 
-	socket.on('atadKartyaKozepre', (text)=>{
+	socket.on('atadKartyaKozepre', (aktualisanAtadottKartyak)=>{
 		let atadKartyaKozepre = document.getElementsByClassName("dobottkartyak");
 		let atadKartyaKozepreCount = atadKartyaKozepre.length;
-		
-		if(atadKartyaKozepreCount < 3){
-			let link = '/' + "kepek" + '/' + text + '.png';
-			if(atadKartyaKozepreCount >0){
-				for(i=atadKartyaKozepreCount-1; i>-1; i--){
-					let longLink = atadKartyaKozepre[i].src
-					if(longLink.includes(link)){
-						atadKartyaKozepre[i].remove();
-						break;
-					} else {
-						appendImgDobott(link);
-						break;
-				}
-			}
-			} else {
-				appendImgDobott(link);
-			}
-
+		for(i=atadKartyaKozepreCount-1; i>-1; i--){
+			atadKartyaKozepre[i].remove();
 		}
+		for(i=0; i< aktualisanAtadottKartyak.length; i++){
+			let text = aktualisanAtadottKartyak[i].color + "-" + aktualisanAtadottKartyak[i].number;
+			let link = '/' + "kepek" + '/' + text + '.png';
+			////console.log(text);
+			appendImgDobott(link);
+		}
+
+		// if(atadKartyaKozepreCount <= 3){
+		// 	let link = '/' + "kepek" + '/' + text + '.png';
+		// 	if(atadKartyaKozepreCount >0){
+		// 		for(i=atadKartyaKozepreCount-1; i>-1; i--){
+		// 			let longLink = atadKartyaKozepre[i].src
+		// 			if(longLink.includes(link)){
+		// 				atadKartyaKozepre[i].remove();
+		// 				break;
+		// 			} else {
+		// 				appendImgDobott(link);
+		// 				break;
+		// 		}
+		// 	}
+		// 	} else {
+		// 		appendImgDobott(link);
+		// 	}
+
+		// }
 	})
 	socket.on('onCorrectPlayerPick', (text)=>{ // text = "0-0"
 		// check if we have 4 so new round can start clear
-		console.log("oncorrectplayerpick has run with text: " + text)
+		////console.log("oncorrectplayerpick has run with text: " + text)
 		removeMiddleCards();
 		let link = '/' + "kepek" + '/' + text + '.png';
 		appendImgDobott(link);
-		console.log("appending dobott kartyak: " + link)
+		////console.log("appending dobott kartyak: " + link)
 	})
 	socket.on('notYourTurn', (text)=>{
 		alert(text);
@@ -215,7 +233,7 @@ let localPlayerNumber;
 	})
 
 	socket.on('err', (message)=>{
-		console.log("Már negvannak négyen!");
+		////console.log("Már negvannak négyen!");
 	})
 	socket.on('nevErkezett', (players)=>{
 		let mySocket = socket.io.engine.id;
@@ -233,29 +251,35 @@ let localPlayerNumber;
 	})
 
 	socket.on('gameOver', ()=>{
-		text = "Kör vége, kérlek egyelőre csak az OK-ra kattints!";
-		let uj = confirm(text);
+		//text = "Kör vége, kérlek egyelőre csak az OK-ra kattints!";
+		//console.log(text);
+		//let uj = confirm(text);
 		// remove cards from table
-		if(uj){
+		//if(uj){
 			let numberOfDobottKartyak = document.querySelectorAll(".dobottKartyak");
 			for(i=0; i<numberOfDobottKartyak.length; i++){
 				numberOfDobottKartyak[i].remove();
 			}
-			socket.emit('newGame', '');			
-		}
+			let myID = socket.io.engine.id;
+			socket.emit('newGame', myID);			
+		//}
 	})
 
 socket.on('getPoints', (pontok)=>{
-	console.log("pontok: " + pontok)
+	////console.log("pontok: " + pontok)
 	pontok = pontok;
 	// check if it hasn't been appended yet
 	let checkForH3 = document.getElementsByClassName("h3points");
 	if (checkForH3.length<1){
 		let sor = pontok[0].length;
-		console.log("Table creálódik, sora: " + sor);
+		////console.log("Table creálódik, sora: " + sor);
 		createTable(4, sor, pontok);
-		console.log("table created")
+		////console.log("table created")
 	}
+
+socket.on('atadasTeljesenKesz', ()=>{
+	////console.log('ackd atadasTeljesenKesz');
+})
 
 function createTable(oszlop, sor, pontok){ 
 	//Create a new table 
@@ -296,28 +320,61 @@ class Table {
 	function sumRows(c, l, pontok){
 	let sum = 0;
 		for(i=0; i<l+1; i++){
-			console.log("header száma is " + c)
-			console.log("pontjai " + pontok[c])
-			console.log("element is " + i)
-			console.log("elementek száma " + pontok[c].length)
+			////console.log("header száma is " + c)
+			////console.log("pontjai " + pontok[c])
+			////console.log("element is " + i)
+			////console.log("elementek száma " + pontok[c].length)
 			sum+=pontok[c][i];
-			console.log("sum is: " + sum)
+			////console.log("sum is: " + sum)
 		}
 	return sum;
 
 	}
 
+function getFromWhom(cycle){
+	// cycle tells you the round number
+	// e.g. if cycle %4 = 1, then the round number is 1
+	// then players give 3 cards to the right
+	switch(cycle %4){
+		case 1:
+			if(myPlayerNumber == 0){return 3} // player 0 gets cards from player 1
+			if(myPlayerNumber == 1){return 0} // player 1 gets cards from player 2
+			if(myPlayerNumber == 2){return 1}
+			if(myPlayerNumber == 3){return 2}
+		break;
+
+		case 2:
+			if(myPlayerNumber == 0){return 1}
+			if(myPlayerNumber == 1){return 2}
+			if(myPlayerNumber == 2){return 3}
+			if(myPlayerNumber == 3){return 0}
+		break;
+
+		case 3:
+			if(myPlayerNumber == 0){return 2}
+			if(myPlayerNumber == 1){return 3}
+			if(myPlayerNumber == 2){return 0}
+			if(myPlayerNumber == 3){return 1}
+		break;
+	}
+}
+
+function removeNotifications(){
+	let notifications = document.getElementsByClassName('stat');
+	let length = notifications.length;
+	for(i=length-1; i>-1;i--){
+		notifications[i].remove();
+	}
+}
+
 document.onclick = (e) => {
 	domTarget = e.target;
-	console.log(domTarget)
+	////console.log(domTarget)
 	// later change to .className maybe
 	if(e.target.tagName == 'IMG'){
 		let a = e.target.src.split('/kepek/');
-		console.log(a)
 		let b = a[1].split(".png");
-		console.log(b)
 		pickedCard = b[0].split('-'); // [0,0] for treff 2
-		console.log(a)
 
 		let myID = socket.io.engine.id;
 		let data = {
@@ -339,7 +396,7 @@ window.onclick = function(event) {
       if (openDropdown.classList.contains('show')) {
 		
 		let h3remove = document.querySelectorAll(".h3points");
-			console.log(h3remove.length)
+			////console.log(h3remove.length)
 			for(i=0; i<h3remove.length; i++){
 				h3remove[i].remove();
 			}
@@ -390,7 +447,7 @@ function appendStats (text, div="gamestats") {
 			for(i=0; i<1;i++){
 				statCount[i].remove();
 			}
-			if(!kapottKartyakTörölve){
+			if(!kapottKartyakTörölve && kapottKartyaCount.length > 0){
 				for(i=kapottKartyaCount.length-1; i>-1;i--){
 					kapottKartyaCount[i].remove();
 				}
@@ -409,6 +466,11 @@ function showPoints(){
 	document.getElementById("myDropdown").classList.toggle("show");
 	let playerSocketID = socket.io.engine.id;
 	socket.emit('showPoints', playerSocketID);
+}
+
+function confirmAtadas(){
+	let myID = socket.io.engine.id;
+	socket.emit('confirmAtadas', myID);
 }
 
 // CHAT
@@ -432,10 +494,21 @@ function sendMessage(){
 }
 function removeMiddleCards(){
 	let numberOfDobottKartyak = document.querySelectorAll(".dobottKartyak");
-	console.log("dobottak: " + numberOfDobottKartyak)
+	////console.log("dobottak: " + numberOfDobottKartyak)
 	if(numberOfDobottKartyak.length == 4){
 		for(i=0; i<numberOfDobottKartyak.length; i++){
 			numberOfDobottKartyak[i].remove();
+		}
+	}
+}
+
+function removeKartyak(className){
+	let imagesToRemove = document.getElementsByClassName(className);
+	let length = imagesToRemove.length;
+	if(length > 0){
+		for(i=length-1;i>-1; i--){
+			//console.log("length: " + length + " és i: " + i)
+			imagesToRemove[i].remove();
 		}
 	}
 }
@@ -466,5 +539,7 @@ function deskOrder(myPlayerNumber, player1 = 'Player 1', player2 = 'Player 2', p
 			console.log('Fail in deskOrder')
 
 	}
+
+
 }
 </script>
