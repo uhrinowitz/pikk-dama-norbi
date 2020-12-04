@@ -1,0 +1,40 @@
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script
+  src="https://code.jquery.com/jquery-3.4.1.js"
+  integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
+  crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="style.css">
+<div class="topnav">
+	<a class="active" href="#home">Home</a>
+	<button id="pontok" class="dropbtn" onmouseover="showPoints()">Pontok</button>
+
+	<div id="myDropdown" class="dropdown-content">
+		<table id="jatekosPontok">
+		  </table>
+	</div>
+
+
+	<a href="#kapcsolat">Kapcsolat</a>
+	<a href="#jatekszabaly">Játékszabály</a>
+  </div>
+  
+  <div style="padding-left:16px">
+	<h2>Fekete macska</h2>
+  </div>
+<div class="flex-container">
+	<div id="playerTop" ></div>
+  </div>
+  <div  class="flex-container">
+	<div id="playerLeft"></div>
+	<div id="dobottKartyak" class="flex-subcontainer">Register
+
+	</div>
+	<div id="playerRight"></div>  
+  </div>
+  
+<script type="text/javascript" src="main.js"></script>
+<script>
+    var socket = io.connect('http://localhost:4200');
+</script>

@@ -1,6 +1,63 @@
 // SETTING UP THE SERVER
 var express=require("express");
+// var path = require('path');
+// var favicon = require('serve-favicon');
+// var logger = require('morgan');
+// var cookieParser = require('cookie-parser');
+// var bodyParser = require('body-parser');
+// var session = require('express-session');
+// var passport = require('passport');
+// var LocalStrategy = require('passport-local').Strategy;
+// var multer = require('multer');
+// var flash = require('connect-flash');
+// var mongo = require('mongodb');
+// var mongoose = require('mongoose');
+// var db = mongoose.connection;
+// var expressValidator = require('express-validator');
+
+// var routes = require('./index');
+// var users = require('./users')
+
 var app=express();
+
+// view engine
+//app.set('views', path.join(__dirname, 'views');
+//app.set('view engine', 'jade');
+
+// Handle File uploads
+//app.use(multer({dest:'./uploads'}));
+
+// // Handle sessions
+// app.use(session({
+// 	secret: 'secret',
+// 	saveUninitialized: true,
+// 	resave: true
+// }));
+
+// // Passport
+// app.use(passport.initialize());
+// app.use(passport.session());
+
+// Validator
+// app.use(expressValidator({
+// 	errorformatter: function(param, msg, value){
+// 		var namespace = param.split('.')
+// 		, root = namespace.shift()
+// 		, formParam = root;
+// 		while(namespace.length){
+// 			formParam += '[' + namespace.shift() + ']';
+// 		}
+// 		return {
+// 			param: formParam,
+// 			msg: msg,
+// 			value: value
+// 		};
+// 	}
+// }));
+
+// app.use('/', routes);
+// app.use('/users', users);
+
 var server=require("http").Server(app);
 var io = require('socket.io')(server);
 let appPort = process.env.PORT || 4200;
@@ -27,7 +84,6 @@ let deck = [];
 let connectionsLimit = 4;
 // game specific variables
 let playerOrder = [];
-let cardsToReceiveByPlayer = [];
 let originalPlayerOrder = [];
 let evalCards = [];
 // let korElejenAtadottKartyak = 0;
@@ -282,7 +338,7 @@ socket.on("showPoints", (playerSocketID)=>{
 			let pontokTomb = [];
 			console.log("final points:" + players[i].finalPoints)
 			pontokTomb = [...players[i].finalPoints]
-			//pontokTomb = [1,2,3,4];
+			// pontokTomb = [1,2,3,4];
 			let points = 0;
 			for(j=0; j<players[i].playerInventory.length; j++){
 				if(players[i].playerInventory[j].color == 2){ // ha kőr
