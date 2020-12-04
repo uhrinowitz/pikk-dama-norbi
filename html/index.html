@@ -65,7 +65,6 @@ let localPlayerNumber;
 // when client connects to server
 	socket.on('connect', (data) => {
 		let playerSocketID = socket.io.engine.id;
-		////console.log("socket id sent to server is: " + playerSocketID);
 		socket.emit('join', playerSocketID);
 	});
 
@@ -82,7 +81,7 @@ let localPlayerNumber;
 	
 	// listens to welcome
     socket.on('welcome', (data)  => {
-		////console.log("data received is: " + data);
+		console.log("server started");
 	});
 	
 	// listens to when all players joined and notify server
